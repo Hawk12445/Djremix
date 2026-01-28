@@ -2,648 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Web Audio Mixer 502S</title>
-    <style>
-        :root {
-            --bg-color: #222;
-            --panel-color: #1a1a1a;
-            --text-color: #ddd;
-            --knob-white: #e0e0e0;
-            --knob-blue: #005f9e;
-            --knob-dark: #333;
-            --accent-red: #d00;
-            --accent-green: #0d0;
-        }
-
-        body {
-            background-color: #111;
-            color: var(--text-color);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        /* MIXER CHASSIS */
-        .mixer-container {
-            background: linear-gradient(180deg, #333 0%, #1a1a1a 100%);
-            border: 2px solid #555;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            width: 100%;
-            max-width: 450px;
-            height: 95vh;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .header {
-            background-color: #ccc;
-            color: #111;
-            padding: 5px;
-            font-weight: bold;
-            font-size: 14px;
-            text-align: right;
-            border-bottom: 2px solid #000;
-            border-top-left-radius: 6px;
-            border-top-right-radius: 6px;
-        }
-
-        .main-panel {
-            display: flex;
-            flex: 1;
-            overflow-y: auto;
-            padding: 10px;
-            gap: 5px;
-        }
-
-        /* STRIPS */
-        .strip {
-            flex: 1;
-            background-color: #151515;
-            border-right: 1px solid #444;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 10px;
-            position: relative;
-        }
-
-        .strip:last-child {
-            border-right: none;
-        }
-
-        .section-label {
-            font-size: 10px;
-            margin-bottom: 5px;
-            color: #888;
-            text-transform: uppercase;
-        }
-
-        /* PLAYER CONTROLS */
-        .player-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 4px;
-            width: 90%;
-            margin-bottom: 10px;
-            background: #222;
-            padding: 4px;
-            border-radius: 4px;
-            border: 1px solid #444;
-        }
-
-        .btn-control {
-            border: none;
-            border-radius: 3px;
-            font-size: 10px;
-            padding: 5px 8px;
-            cursor: pointer;
-            color: white;
-            flex: 1;
-            text-align: center;
-        }
-
-        .btn-load { background: #555; width: 100%; margin-bottom: 2px; }
-        .btn-play { background: #005f9e; }
-        .btn-pause { background: #d00; }
-        
-        .btn-control:active { transform: scale(0.95); }
-
-        /* KNOB STYLING */
-        .knob-wrapper {
-            position: relative;
-            width: 50px;
-            height: 65px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-
-        .knob {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            position: relative;
-            box-shadow: 0 4px 5px rgba(0,0,0,0.5);
-            cursor: pointer;
-            transition: transform 0.1s;
-            touch-action: none;
-        }
-
-        .k-white { background: radial-gradient(circle at 30% 30%, #fff, #bbb); }
-        .k-blue { background: radial-gradient(circle at 30% 30%, #4facfe, #005f9e); }
-        .k-dark { background: radial-gradient(circle at 30% 30%, #555, #222); }
-
-        .knob::after {
-            content: '';
-            position: absolute;
-            top: 5px;
-            left: 50%;
-            width: 3px;
-            height: 12px;
-            background-color: #333;
-            transform: translateX(-50%);
-            border-radius: 2px;
-        }
-        .k-dark::after { background-color: #fff; }
-
-        .knob-label {
-            font-size: 9px;
-            margin-top: 4px;
-            text-align: center;
-            font-weight: bold;
-        }
-        .sub-label { font-size: 8px; color: #777; }
-
-        /* JACKS */
-        .jack-container {
-            width: 100%;
-            height: 60px;
-            background: #2a2a2a;
-            margin-bottom: 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid #444;
-        }
-
-        .jack {
-            width: 25px;
-            height: 25px;
-            background: #000;
-            border: 3px solid #888;
-            border-radius: 50%;
-            margin: 2px;
-        }
-        
-        .xlr {
-            width: 35px;
-            height: 35px;
-            background: #111;
-            border: 2px solid #555;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .xlr div { width: 4px; height: 4px; background: #666; border-radius: 50%; margin: 2px; }
-
-        /* POWER & METERS */
-        .power-btn {
-            position: absolute;
-            top: 5px;
-            left: 10px;
-            background: #222;
-            color: #d00;
-            border: 1px solid #555;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            z-index: 100;
-        }
-        .power-on { background: #d00; color: #fff; box-shadow: 0 0 10px #d00; }
-
-        .meter-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        canvas {
-            background: #000;
-            border: 1px solid #444;
-            border-radius: 2px;
-        }
-
-        input[type="file"] { display: none; }
-
-        .status-led {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #300;
-            margin-bottom: 5px;
-            transition: background-color 0.2s;
-            box-shadow: inset 0 0 2px rgba(0,0,0,0.5);
-        }
-        .led-active { background-color: #0f0; box-shadow: 0 0 5px #0f0; }
-        .led-playing { animation: blink 1s infinite; }
-
-        @keyframes blink { 50% { opacity: 0.5; } }
-    </style>
 </head>
 <body>
-
-<div class="mixer-container">
+    <div class="mixer-container">
     <button id="powerBtn" class="power-btn">POWER OFF</button>
-    <div class="header">Jay Mixer</div>
-
+    <div class="header">behringer XENYX 502S</div>
     <div class="main-panel">
-        
-        <!-- CHANNEL 1 (MIC/MONO) -->
-        <div class="strip">
-            <div class="jack-container">
-                <div class="xlr"><div></div><div></div><div></div></div>
-                <div class="section-label">MIC 1</div>
-            </div>
-            
-            <!-- PLAYER 1 -->
-            <div class="player-controls">
-                <button class="btn-control btn-load" onclick="document.getElementById('file1').click()">📂 LOAD</button>
-                <button class="btn-control btn-play" onclick="controlPlayer(1, 'play')">▶</button>
-                <button class="btn-control btn-pause" onclick="controlPlayer(1, 'pause')">⏸</button>
-            </div>
-            <input type="file" id="file1" accept="audio/*">
-            <div id="led1" class="status-led"></div>
-
-            <!-- GAIN -->
-            <div class="knob-wrapper">
-                <div class="knob k-white" data-control="gain" data-channel="1" style="transform: rotate(-135deg);"></div>
-                <div class="knob-label">GAIN</div>
-            </div>
-
-            <!-- EQ HIGH -->
-            <div class="knob-wrapper">
-                <div class="knob k-blue" data-control="high" data-channel="1" style="transform: rotate(0deg);"></div>
-                <div class="knob-label">HIGH</div>
-            </div>
-
-            <!-- EQ LOW -->
-            <div class="knob-wrapper">
-                <div class="knob k-blue" data-control="low" data-channel="1" style="transform: rotate(0deg);"></div>
-                <div class="knob-label">LOW</div>
-            </div>
-
-            <!-- PAN -->
-            <div class="knob-wrapper">
-                <div class="knob k-dark" data-control="pan" data-channel="1" style="transform: rotate(0deg);"></div>
-                <div class="knob-label">PAN</div>
-            </div>
-
-            <!-- LEVEL -->
-            <div class="knob-wrapper">
-                <div class="knob k-white" data-control="level" data-channel="1" style="transform: rotate(-135deg);"></div>
-                <div class="knob-label">LEVEL</div>
-                <div class="sub-label">1</div>
-            </div>
-        </div>
-
-        <!-- CHANNEL 2/3 (STEREO) -->
-        <div class="strip">
-            <div class="jack-container">
-                <div style="display:flex;"><div class="jack"></div><div class="jack"></div></div>
-                <div class="section-label">LINE 2/3</div>
-            </div>
-
-            <!-- PLAYER 2 -->
-            <div class="player-controls">
-                <button class="btn-control btn-load" onclick="document.getElementById('file2').click()">📂 LOAD</button>
-                <button class="btn-control btn-play" onclick="controlPlayer(2, 'play')">▶</button>
-                <button class="btn-control btn-pause" onclick="controlPlayer(2, 'pause')">⏸</button>
-            </div>
-            <input type="file" id="file2" accept="audio/*">
-            <div id="led2" class="status-led"></div>
-
-            <div style="height: 120px;"></div> <!-- Spacer -->
-
-            <!-- BAL -->
-            <div class="knob-wrapper">
-                <div class="knob k-dark" data-control="pan" data-channel="2" style="transform: rotate(0deg);"></div>
-                <div class="knob-label">BAL</div>
-            </div>
-
-            <!-- LEVEL -->
-            <div class="knob-wrapper">
-                <div class="knob k-white" data-control="level" data-channel="2" style="transform: rotate(-135deg);"></div>
-                <div class="knob-label">LEVEL</div>
-                <div class="sub-label">2/3</div>
-            </div>
-        </div>
-
-        <!-- MAIN SECTION -->
-        <div class="strip">
-            <div class="jack-container">
-                <div style="display:flex;"><div class="jack"></div><div class="jack"></div></div>
-                <div class="section-label">MAIN OUT</div>
-            </div>
-
-            <!-- VISUALIZER -->
-            <div class="meter-section">
-                <canvas id="vuMeter" width="40" height="100"></canvas>
-                <div class="section-label" style="margin-top:5px;">MAIN MIX</div>
-            </div>
-
-            <!-- PHONES -->
-            <div class="knob-wrapper">
-                <div class="knob k-white" data-control="phones" data-channel="master" style="transform: rotate(-135deg);"></div>
-                <div class="knob-label">PHONES</div>
-            </div>
-
-            <!-- MAIN MIX -->
-            <div class="knob-wrapper">
-                <div class="knob k-white" data-control="main" data-channel="master" style="transform: rotate(-90deg);"></div>
-                <div class="knob-label">MAIN MIX</div>
-            </div>
-        </div>
-
+    <!-- CHANNEL 1 (MIC/MONO) -->
+    <div class="strip">
+    <div class="jack-container">
+    <div class="xlr"><div></div><div></div><div></div></div>
+    <div class="section-label">MIC 1</div>
     </div>
-</div>
-
-<script>
-    /* --- AUDIO ENGINE SETUP --- */
-    let audioCtx;
-    let masterGain;
-    let analyser;
-    let isPowered = false;
-
-    const channels = {};
-
-    function initAudio() {
-        if(audioCtx) return;
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        audioCtx = new AudioContext();
-
-        // Master Chain
-        masterGain = audioCtx.createGain();
-        analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 64;
-
-        masterGain.connect(analyser);
-        analyser.connect(audioCtx.destination);
-        
-        masterGain.gain.value = 0.5; // Default master vol
-        
-        // Setup Channels
-        channels[1] = new MixerChannel(1, 'mono');
-        channels[2] = new MixerChannel(2, 'stereo');
-        
-        drawMeter();
-    }
-
-    /* --- CHANNEL CLASS --- */
-    class MixerChannel {
-        constructor(id, type) {
-            this.id = id;
-            this.type = type;
-            
-            // HTML5 Audio Element (Better for Play/Pause logic)
-            this.audioElement = new Audio();
-            this.audioElement.loop = true;
-            this.audioElement.crossOrigin = "anonymous";
-            
-            // Create Media Element Source
-            this.sourceNode = audioCtx.createMediaElementSource(this.audioElement);
-            
-            // Nodes
-            this.gainNode = audioCtx.createGain(); // Trim/Gain
-            this.levelNode = audioCtx.createGain(); // Fader
-            this.panNode = audioCtx.createStereoPanner();
-            
-            // Internal Routing
-            if (this.type === 'mono') {
-                this.highEQ = audioCtx.createBiquadFilter();
-                this.highEQ.type = "highshelf";
-                this.highEQ.frequency.value = 12000;
-                
-                this.lowEQ = audioCtx.createBiquadFilter();
-                this.lowEQ.type = "lowshelf";
-                this.lowEQ.frequency.value = 80;
-
-                // Chain: Source -> Gain -> High -> Low -> Pan -> Level -> Master
-                this.sourceNode.connect(this.gainNode);
-                this.gainNode.connect(this.highEQ);
-                this.highEQ.connect(this.lowEQ);
-                this.lowEQ.connect(this.panNode);
-            } else {
-                // Stereo Chain: Source -> Gain -> Pan(Bal) -> Level -> Master
-                this.sourceNode.connect(this.gainNode);
-                this.gainNode.connect(this.panNode);
-            }
-
-            this.panNode.connect(this.levelNode);
-            this.levelNode.connect(masterGain);
-
-            // Defaults (Silence until knob moved)
-            this.gainNode.gain.value = 0; 
-            this.levelNode.gain.value = 0;
-        }
-
-        loadFile(file) {
-            const fileURL = URL.createObjectURL(file);
-            this.audioElement.src = fileURL;
-            const led = document.getElementById(`led${this.id}`);
-            led.classList.add('led-active'); // Turn Green indicating loaded
-        }
-
-        play() {
-            if(this.audioElement.src) {
-                audioCtx.resume();
-                this.audioElement.play();
-                document.getElementById(`led${this.id}`).classList.add('led-playing');
-            }
-        }
-
-        pause() {
-            this.audioElement.pause();
-            document.getElementById(`led${this.id}`).classList.remove('led-playing');
-        }
-
-        setParam(param, value) {
-            // Value is 0 to 1 normalized
-            switch(param) {
-                case 'gain': 
-                    // Gain Boost
-                    this.gainNode.gain.value = value * 4; 
-                    break;
-                case 'level':
-                    this.levelNode.gain.value = value * 2;
-                    break;
-                case 'pan':
-                    this.panNode.pan.value = (value * 2) - 1;
-                    break;
-                case 'high':
-                    this.highEQ.gain.value = (value * 40) - 20;
-                    break;
-                case 'low':
-                    this.lowEQ.gain.value = (value * 40) - 20;
-                    break;
-            }
-        }
-    }
-
-    /* --- UI & INTERACTION --- */
-    
-    // Player Controls Wrapper
-    function controlPlayer(chId, action) {
-        if(!isPowered) { alert("Please turn Power ON first!"); return; }
-        if(!channels[chId]) return;
-
-        if(action === 'play') channels[chId].play();
-        if(action === 'pause') channels[chId].pause();
-    }
-
-    // Power
-    const powerBtn = document.getElementById('powerBtn');
-    powerBtn.addEventListener('click', () => {
-        if(!isPowered) {
-            initAudio();
-            audioCtx.resume();
-            isPowered = true;
-            powerBtn.textContent = "POWER ON";
-            powerBtn.classList.add('power-on');
-        } else {
-            audioCtx.suspend();
-            isPowered = false;
-            powerBtn.textContent = "POWER OFF";
-            powerBtn.classList.remove('power-on');
-            
-            // Stop visuals
-            document.querySelectorAll('.status-led').forEach(l => {
-                l.classList.remove('led-active', 'led-playing');
-            });
-        }
-    });
-
-    // File Inputs
-    ['file1', 'file2'].forEach((id, index) => {
-        document.getElementById(id).addEventListener('change', function(e) {
-            if(!isPowered) { 
-                alert("Please turn Power ON first to initialize the mixer!"); 
-                this.value = ''; // Reset input
-                return; 
-            }
-            const file = e.target.files[0];
-            if (file) {
-                channels[index + 1].loadFile(file);
-            }
-        });
-    });
-
-    // Knob Physics
-    const knobs = document.querySelectorAll('.knob');
-    knobs.forEach(knob => {
-        let startY = 0;
-        let currentDeg = -135; 
-        
-        const styleRot = knob.style.transform.match(/-?\d+/);
-        if(styleRot) currentDeg = parseInt(styleRot[0]);
-
-        const handleStart = (y) => {
-            startY = y;
-            document.body.style.userSelect = 'none';
-        };
-
-        const handleMove = (y) => {
-            const delta = startY - y;
-            currentDeg += delta * 2;
-            
-            if (currentDeg < -135) currentDeg = -135;
-            if (currentDeg > 135) currentDeg = 135;
-
-            knob.style.transform = `rotate(${currentDeg}deg)`;
-            
-            const normalized = (currentDeg + 135) / 270;
-            updateAudioParam(knob, normalized);
-            
-            startY = y;
-        };
-
-        knob.addEventListener('mousedown', (e) => {
-            handleStart(e.clientY);
-            const onMouseMove = (ev) => handleMove(ev.clientY);
-            const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                document.body.style.userSelect = 'auto';
-            };
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        });
-
-        knob.addEventListener('touchstart', (e) => {
-            handleStart(e.touches[0].clientY);
-            const onTouchMove = (ev) => {
-                ev.preventDefault();
-                handleMove(ev.touches[0].clientY);
-            };
-            const onTouchEnd = () => {
-                document.removeEventListener('touchmove', onTouchMove);
-                document.removeEventListener('touchend', onTouchEnd);
-            };
-            document.addEventListener('touchmove', onTouchMove, { passive: false });
-            document.addEventListener('touchend', onTouchEnd);
-        });
-    });
-
-    function updateAudioParam(knobElement, value) {
-        if(!isPowered || !audioCtx) return;
-        
-        const type = knobElement.dataset.control;
-        const chId = knobElement.dataset.channel;
-
-        if (chId === 'master') {
-            if(type === 'main') masterGain.gain.value = value * 2;
-        } else {
-            channels[chId].setParam(type, value);
-        }
-    }
-
-    // Visualizer Loop
-    function drawMeter() {
-        const canvas = document.getElementById('vuMeter');
-        const ctx = canvas.getContext('2d');
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-
-        function render() {
-            requestAnimationFrame(render);
-            if(!isPowered) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                return;
-            }
-
-            analyser.getByteFrequencyData(dataArray);
-            let sum = 0;
-            for(let i = 0; i < bufferLength; i++) sum += dataArray[i];
-            let average = sum / bufferLength;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const bars = 6;
-            const height = canvas.height / bars;
-            const level = (average / 80) * bars; // Sensitivity adjustment
-
-            for(let i = 0; i < bars; i++) {
-                ctx.beginPath();
-                // LED Backgrounds
-                if (i < 1) ctx.fillStyle = '#400';
-                else if (i < 2) ctx.fillStyle = '#440';
-                else ctx.fillStyle = '#030';
-
-                // Lit LEDs
-                if ((bars - 1 - i) < level) {
-                    if (i < 1) ctx.fillStyle = '#f00'; // CLIP
-                    else if (i < 2) ctx.fillStyle = '#ff0'; 
-                    else ctx.fillStyle = '#0f0';
-                }
-
-                ctx.arc(canvas.width / 2, (i * height) + 10, 5, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        }
-        render();
-    }
-</script>
-
+    <!-- PLAYER 1 -->
+    <div class="player-controls">
+    <button class="btn-control btn-load" onclick="document.getElementById('file1').click()">📂 LOAD</button>
+    <button class="btn-control btn-play" onclick="controlPlayer(1, 'play')">▶</button>
+    <button class="btn-control btn-pause" onclick="controlPlayer(1, 'pause')">⏸</button>
+    </div>
+    <input type="file" id="file1" accept="audio/*">
+    <div id="led1" class="status-led"></div>
+    <!-- GAIN -->
+    <div class="knob-wrapper">
+    <div class="knob k-white" data-control="gain" data-channel="1" style="transform: rotate(-135deg);"></div>
+    <div class="knob-label">GAIN</div>
+    </div>
+    <!-- EQ HIGH -->
+    <div class="knob-wrapper">
+    <div class="knob k-blue" data-control="high" data-channel="1" style="transform: rotate(0deg);"></div>
+    <div class="knob-label">HIGH</div>
+    </div>
+    <!-- EQ LOW -->
+    <div class="knob-wrapper">
+    <div class="knob k-blue" data-control="low" data-channel="1" style="transform: rotate(0deg);"></div>
+    <div class="knob-label">LOW</div>
+    </div>
+    <!-- PAN -->
+    <div class="knob-wrapper">
+    <div class="knob k-dark" data-control="pan" data-channel="1" style="transform: rotate(0deg);"></div>
+    <div class="knob-label">PAN</div>
+    </div>
+    <!-- LEVEL -->
+    <div class="knob-wrapper">
+    <div class="knob k-white" data-control="level" data-channel="1" style="transform: rotate(-135deg);"></div>
+    <div class="knob-label">LEVEL</div>
+    <div class="sub-label">1</div>
+    </div>
+    </div>
+    <!-- CHANNEL 2/3 (STEREO) -->
+    <div class="strip">
+    <div class="jack-container">
+    <div style="display:flex;"><div class="jack"></div><div class="jack"></div></div>
+    <div class="section-label">LINE 2/3</div>
+    </div>
+    <!-- PLAYER 2 -->
+    <div class="player-controls">
+    <button class="btn-control btn-load" onclick="document.getElementById('file2').click()">📂 LOAD</button>
+    <button class="btn-control btn-play" onclick="controlPlayer(2, 'play')">▶</button>
+    <button class="btn-control btn-pause" onclick="controlPlayer(2, 'pause')">⏸</button>
+    </div>
+    <input type="file" id="file2" accept="audio/*">
+    <div id="led2" class="status-led"></div>
+    <div style="height: 120px;"></div> <!-- Spacer -->
+    <!-- BAL -->
+    <div class="knob-wrapper">
+    <div class="knob k-dark" data-control="pan" data-channel="2" style="transform: rotate(0deg);"></div>
+    <div class="knob-label">BAL</div>
+    </div>
+    <!-- LEVEL -->
+    <div class="knob-wrapper">
+    <div class="knob k-white" data-control="level" data-channel="2" style="transform: rotate(-135deg);"></div>
+    <div class="knob-label">LEVEL</div>
+    <div class="sub-label">2/3</div>
+    </div>
+    </div>
+    <!-- MAIN SECTION -->
+    <div class="strip">
+    <div class="jack-container">
+    <div style="display:flex;"><div class="jack"></div><div class="jack"></div></div>
+    <div class="section-label">MAIN OUT</div>
+    </div>
+    <!-- VISUALIZER -->
+    <div class="meter-section">
+    <canvas id="vuMeter" width="40" height="100"></canvas>
+    <div class="section-label" style="margin-top:5px;">MAIN MIX</div>
+    </div>
+    <!-- PHONES -->
+    <div class="knob-wrapper">
+    <div class="knob k-white" data-control="phones" data-channel="master" style="transform: rotate(-135deg);"></div>
+    <div class="knob-label">PHONES</div>
+    </div>
+    <!-- MAIN MIX -->
+    <div class="knob-wrapper">
+    <div class="knob k-white" data-control="main" data-channel="master" style="transform: rotate(-90deg);"></div>
+    <div class="knob-label">MAIN MIX</div>
+    </div>
+    </div>
+    </div>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
